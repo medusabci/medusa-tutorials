@@ -7,6 +7,7 @@ from medusa.bci import erp_spellers
 from medusa import meeg_standards
 import glob
 from tabulate import tabulate
+import matplotlib.pyplot as plt
 
 #%% Create dataset and load recordings
 cha_set = meeg_standards.EEGChannelSet()
@@ -17,7 +18,7 @@ dataset = erp_spellers.ERPSpellerDataset(channel_set=cha_set,
                                          experiment_att_key='erpspellerdata',
                                          experiment_mode='train')
 
-folder = 'E:/Eduardo/PythonProjects/medusa/medusa-platform/data'
+folder = 'data'
 file_pattern = '*.rcp.bson'
 files = glob.glob('%s/%s' % (folder, file_pattern))
 dataset.add_recordings(files)
@@ -30,8 +31,8 @@ features, track_info = erp_spellers.extract_erp_features_from_dataset(dataset)
 data_exploration = [
     ['Runs', np.unique(track_info['run_idx']).shape[0]],
     ['Epochs', features.shape[0]],
-    ['Target', np.sum(track_info['erp_labels']==1)],
-    ['Non-target', np.sum(track_info['erp_labels']==0)]
+    ['Target', np.sum(track_info['erp_labels'] == 1)],
+    ['Non-target', np.sum(track_info['erp_labels'] == 0)]
 ]
 print('\nData exploration: \n')
 print(tabulate(data_exploration))
@@ -73,15 +74,26 @@ print(tabulate(table_cmd_acc_per_seq, headers=headers))
 
 #%% Pipeline
 
+class DatasetPreprocessing(data_structures.ProcessingMethod):
+
+    def __init__(self, preprocessing_pipeline):
+        self.preprocessing_pipeline = preprocessing_pipeline
+
+    def fit(self):
+        pass
+
+    def apply(self, dataset):
+        for rec in dataset.recordings:
+            self.preprocessing_pipeline.fs
+            signal_class = getattr(rec, dataset.biosignal_att_key)
+            signal = self.preprocessing_pipeline.fit(signal)
+            setattr(rec, dataset.biosignal_att_key)
+
 # Preprocessing
 freq_filter = IIRFilter(order=5, cutoff=[0.5, 45],
                         btype='bandpass', fs=256,
                         filt_method='sosfiltfilt',
                         axis=0)
-
-car.__code__
-
-car.__annotations__
 
 # Define pipeline
 pipeline = data_structures.ProcessingPipeline('synchronous-erp-speller')
@@ -93,6 +105,8 @@ pipeline.add_method_func(method_id='spatial-filter',
                          method=car,
                          inputs=['frequency-filter'])
 
+
+
 # Fit pipeline
 signal = dataset.recordings[0].eeg.signal
 pipeline.fit(signal)
@@ -102,7 +116,7 @@ signal_prep = pipeline.apply(signal)
 # pipeline_loaded = data_structures.ProcessingPipeline.from_dict(d)
 # data_out2 = pipeline.apply(x_test)
 
-import matplotlib.pyplot as plt
+
 plt.plot(signal)
 plt.show()
 plt.plot(signal_prep)
