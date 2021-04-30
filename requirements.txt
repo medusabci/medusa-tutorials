@@ -1,0 +1,6 @@
+medusa
+numpy
+matplotlib
+tabulate
+sklearn
+scikit-learn

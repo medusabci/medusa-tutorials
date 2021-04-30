@@ -1,25 +1,34 @@
-from medusa import components
-import numpy as np
-from medusa.frequency_filtering import IIRFilter
-from medusa.spatial_filtering import car
-from medusa.bci import erp_spellers
-from medusa import meeg_standards
+# Built-in imports
 import glob
+import functools
+import dill
+
+# Medusa imports
+import medusa as mds
+from medusa import components
+from medusa import meeg
+from medusa.bci import erp_spellers
+
+# External imports
+import numpy as np
 from tabulate import tabulate
 import matplotlib.pyplot as plt
+from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 
-#%% Create dataset and load recordings
-cha_set = meeg_standards.EEGChannelSet()
-cha_set.set_standard_channels(l_cha=['Fz', 'Cz', 'Pz', 'Oz'])
+#%% Load recordings paths
+folder = 'data'
+file_pattern = '*.rcp.bson'
+files = glob.glob('%s/%s' % (folder, file_pattern))
+
+#%% Create dataset
+cha_set = meeg.EEGChannelSet()
+cha_set.set_standard_channels(l_cha=['Fz', 'Cz', 'Pz', 'P3', 'P4', 'PO7',
+                                     'PO8', 'Oz'])
 dataset = erp_spellers.ERPSpellerDataset(channel_set=cha_set,
                                          fs=256,
                                          biosignal_att_key='eeg',
                                          experiment_att_key='erpspellerdata',
                                          experiment_mode='train')
-
-folder = 'data'
-file_pattern = '*.rcp.bson'
-files = glob.glob('%s/%s' % (folder, file_pattern))
 dataset.add_recordings(files)
 
 #%% Explore functions
@@ -71,71 +80,43 @@ dataset.add_recordings(files)
 # print(tabulate(table_cmd_acc_per_seq, headers=headers))
 
 
-#%% Pipeline
-
-# Preprocessing
-def preprocessing_fit(dataset):
-    # Aux instances
-    freq_filter = IIRFilter(order=5, cutoff=[0.5, 45], btype='bandpass',
-                            filt_method='sosfiltfilt', axis=0)
-    # Define pipeline
-    pipe = components.ProcessingPipeline('preprocessing')
-    pipe.set_input(
-        fit_inputs=['dataset'],
-        apply_inputs=['signal']
-    )
-    pipe.add_method(
-        method_id='frequency-filter',
-        method=freq_filter,
-        fit_inputs={
-            'fs': components.PipelineConnector('input', 0)
-        },
-        apply_inputs={
-            'signal': components.PipelineConnector('input')
-        }
-    )
-    pipe.add_method(
-        method_id='spatial-filter',
-        method=car,
-        inputs={
-            'signal': components.PipelineConnector('frequency-filter')
-        }
-    )
-    # Fit and apply filter
-    for r in range(len(dataset.recordings)):
-        # Update fs
-        signal = getattr(dataset.recordings[r], dataset.biosignal_att_key)
-        signal.signal = pipe.fit(signal.fs, signal.signal)
-        setattr(dataset.recordings[r], dataset.biosignal_att_key, signal)
-
-    return dataset
-
-# Pipeline
-pipeline = ds.ProcessingPipeline('sync-erp-speller')
-pipeline.add_method_func(method_id='preprocessing',
-                         method=preprocessing,
-                         inputs={
-                             'dataset': components.PipelineConnector('input')
-                         })
-pipeline.add_method_func(method_id='feat-extraction',
-                         method=erp_spellers.extract_erp_features_from_dataset,
-                         inputs={
-                             'dataset': components.PipelineConnector('preprocessing'),
-                             'w_epoch_t': [0, 800]
-                         })
-
+#%% Command decoding algorithm
+mdl = erp_spellers.ERPSpellerModelEEGInception(control_state_detection=True)
+# mdl = erp_spellers.ERPSpellerModelRLDA()
 
 # Fit pipeline
-dataset_prep = pipeline.fit(dataset)
-plt.plot(dataset.recordings[0].eeg.signal)
-plt.show()
-plt.plot(dataset_prep.recordings[0].eeg.signal)
-plt.show()
+res_fit = mdl.fit_dataset(dataset)
+print(res_fit['spell_acc_per_seq'])
+print(res_fit['control_state_acc_per_seq'])
 
-# d = pipeline.to_dict()
-# pipeline_loaded = ds.ProcessingPipeline.from_dict(d)
+# Test pipeline
+rec = dataset.recordings[1]
+times = rec.eeg.times
+signal = rec.eeg.signal
+fs = rec.eeg.fs
+lcha = rec.eeg.channel_set.l_cha
+x_info = {'onsets': rec.erpspellerdata.onsets,
+          'paradigm_conf': [rec.erpspellerdata.paradigm_conf],
+          'run_idx': np.zeros_like(rec.erpspellerdata.onsets),
+          'trial_idx': rec.erpspellerdata.trial_idx,
+          'matrix_idx': rec.erpspellerdata.matrix_idx,
+          'level_idx': rec.erpspellerdata.level_idx,
+          'unit_idx': rec.erpspellerdata.unit_idx,
+          'sequence_idx': rec.erpspellerdata.sequence_idx,
+          'group_idx': rec.erpspellerdata.group_idx,
+          'batch_idx': rec.erpspellerdata.batch_idx}
 
+res_test = mdl.predict(times, signal, fs, lcha, x_info)
 
-import inspect
-from medusa.spatial_filtering import car
-a = car
+print(rec.erpspellerdata.spell_target)
+print(res_test['spell_result'])
+print(res_fit['control_state_result'])
+
+# mdl.save('hola.pkl')
+#
+# #%%
+#
+# alg = components.Algorithm()
+# alg.add_method('iir-filt', mds.IIRFilter(order=5, cutoff=(0.5, 10),
+#                                          btype='bandpass'))
+# alg.save('adios.pkl')
