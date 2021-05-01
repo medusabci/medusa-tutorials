@@ -79,17 +79,8 @@ dataset.add_recordings(files)
 # headers = [''] + ['%i' % s for s in np.arange(1, 16)]
 # print(tabulate(table_cmd_acc_per_seq, headers=headers))
 
+#%% Select some test data simulating online prediction
 
-#%% Command decoding algorithm
-mdl = erp_spellers.ERPSpellerModelEEGInception(control_state_detection=True)
-# mdl = erp_spellers.ERPSpellerModelRLDA()
-
-# Fit pipeline
-res_fit = mdl.fit_dataset(dataset)
-print(res_fit['spell_acc_per_seq'])
-print(res_fit['control_state_acc_per_seq'])
-
-# Test pipeline
 rec = dataset.recordings[1]
 times = rec.eeg.times
 signal = rec.eeg.signal
@@ -106,17 +97,43 @@ x_info = {'onsets': rec.erpspellerdata.onsets,
           'group_idx': rec.erpspellerdata.group_idx,
           'batch_idx': rec.erpspellerdata.batch_idx}
 
-res_test = mdl.predict(times, signal, fs, lcha, x_info)
+#%% Command decoding algorithm
+cmd_mdl = erp_spellers.CMDModelEEGInception()
+# cmd_mdl = erp_spellers.CMDModelRLDA()
 
+# Fit
+res_fit_cmd = cmd_mdl.fit_dataset(dataset, validation_split=0.2)
+
+print('\nFit spell accuracy per seq:')
+print(res_fit_cmd['spell_acc_per_seq'])
+
+# Predict
+res_test_cmd = cmd_mdl.predict(times, signal, fs, lcha, x_info)
+
+print('\nSpell results:')
 print(rec.erpspellerdata.spell_target)
-print(res_test['spell_result'])
-print(res_fit['control_state_result'])
+print(res_test_cmd['spell_result'])
 
-# mdl.save('hola.pkl')
-#
-# #%%
-#
-# alg = components.Algorithm()
-# alg.add_method('iir-filt', mds.IIRFilter(order=5, cutoff=(0.5, 10),
-#                                          btype='bandpass'))
-# alg.save('adios.pkl')
+#%% Control state detection algorithm
+csd_mdl = erp_spellers.CSDModelEEGInception()
+
+# Fit
+res_fit_csd = csd_mdl.fit_dataset(dataset, validation_split=0.2)
+
+print('\nFit control state accuracy per seq:')
+print(res_fit_csd['control_state_acc_per_seq'])
+
+# Predict
+res_test_csd = csd_mdl.predict(times, signal, fs, lcha, x_info)
+
+print('\nControl state results:')
+print(rec.erpspellerdata.control_state_target)
+print(res_test_csd['control_state_result'])
+
+# #%% Plot features
+# x = res_fit_csd['x']
+# cs_labels = res_fit_csd['x_info']['control_state_labels']
+# cha = 3
+# plt.plot(np.mean(x[cs_labels == 1, :, cha], axis=0))
+# plt.plot(np.mean(x[cs_labels == 0, :, cha], axis=0))
+# plt.show()
