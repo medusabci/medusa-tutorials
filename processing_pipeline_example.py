@@ -102,7 +102,9 @@ cmd_mdl = erp_spellers.CMDModelEEGInception()
 # cmd_mdl = erp_spellers.CMDModelRLDA()
 
 # Fit
-res_fit_cmd = cmd_mdl.fit_dataset(dataset, validation_split=0.2)
+res_fit_cmd = cmd_mdl.fit_dataset(dataset,
+                                  validation_split=0.2,
+                                  batch_size=512)
 
 print('\nFit spell accuracy per seq:')
 print(res_fit_cmd['spell_acc_per_seq'])
@@ -113,12 +115,15 @@ res_test_cmd = cmd_mdl.predict(times, signal, fs, lcha, x_info)
 print('\nSpell results:')
 print(rec.erpspellerdata.spell_target)
 print(res_test_cmd['spell_result'])
+print()
 
 #%% Control state detection algorithm
 csd_mdl = erp_spellers.CSDModelEEGInception()
 
 # Fit
-res_fit_csd = csd_mdl.fit_dataset(dataset, validation_split=0.2)
+res_fit_csd = csd_mdl.fit_dataset(dataset,
+                                  validation_split=0.2,
+                                  batch_size=512)
 
 print('\nFit control state accuracy per seq:')
 print(res_fit_csd['control_state_acc_per_seq'])
@@ -129,8 +134,9 @@ res_test_csd = csd_mdl.predict(times, signal, fs, lcha, x_info)
 print('\nControl state results:')
 print(rec.erpspellerdata.control_state_target)
 print(res_test_csd['control_state_result'])
+print()
 
-# #%% Plot features
+#%% Plot features
 # x = res_fit_csd['x']
 # cs_labels = res_fit_csd['x_info']['control_state_labels']
 # cha = 3
