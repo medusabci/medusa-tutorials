@@ -104,7 +104,8 @@ cmd_mdl = erp_spellers.CMDModelEEGInception()
 # Fit
 res_fit_cmd = cmd_mdl.fit_dataset(dataset,
                                   validation_split=0.2,
-                                  batch_size=512)
+                                  batch_size=512,
+                                  epochs=2)
 
 print('\nFit spell accuracy per seq:')
 print(res_fit_cmd['spell_acc_per_seq'])
@@ -118,28 +119,34 @@ print(res_test_cmd['spell_result'])
 print()
 
 #%% Control state detection algorithm
-csd_mdl = erp_spellers.CSDModelEEGInception()
+# csd_mdl = erp_spellers.CSDModelEEGInception()
+#
+# # Fit
+# res_fit_csd = csd_mdl.fit_dataset(dataset,
+#                                   validation_split=0.2,
+#                                   batch_size=512)
+#
+# print('\nFit control state accuracy per seq:')
+# print(res_fit_csd['control_state_acc_per_seq'])
+#
+# # Predict
+# res_test_csd = csd_mdl.predict(times, signal, fs, lcha, x_info)
+#
+# print('\nControl state results:')
+# print(rec.erpspellerdata.control_state_target)
+# print(res_test_csd['control_state_result'])
+# print()
 
-# Fit
-res_fit_csd = csd_mdl.fit_dataset(dataset,
-                                  validation_split=0.2,
-                                  batch_size=512)
+#%% Load models
 
-print('\nFit control state accuracy per seq:')
-print(res_fit_csd['control_state_acc_per_seq'])
+cmd_mdl.save('cmd_model.pkl')
+
+cmd_mdl2 = erp_spellers.ERPSpellerModel.load('cmd_model.pkl')
 
 # Predict
-res_test_csd = csd_mdl.predict(times, signal, fs, lcha, x_info)
+res_test_cmd = cmd_mdl2.predict(times, signal, fs, lcha, x_info)
 
-print('\nControl state results:')
-print(rec.erpspellerdata.control_state_target)
-print(res_test_csd['control_state_result'])
+print('\nSpell results:')
+print(rec.erpspellerdata.spell_target)
+print(res_test_cmd['spell_result'])
 print()
-
-#%% Plot features
-# x = res_fit_csd['x']
-# cs_labels = res_fit_csd['x_info']['control_state_labels']
-# cha = 3
-# plt.plot(np.mean(x[cs_labels == 1, :, cha], axis=0))
-# plt.plot(np.mean(x[cs_labels == 0, :, cha], axis=0))
-# plt.show()
