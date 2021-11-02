@@ -3,6 +3,10 @@
 # Learn more about .gitignore:
 #     https://www.atlassian.com/git/tutorials/saving-changes/gitignore
 
+# Python virtual environments
+venv/
+python-env/
+
 # Node artifact files
 node_modules/
 dist/
