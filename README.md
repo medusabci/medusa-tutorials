@@ -1,29 +1,27 @@
-# README #
+# MEDUSA© Tutorials #
 
-This README would normally document whatever steps are necessary to get your application up and running.
+MEDUSA© is a software ecosystem for the development of BCIs and neuroscience experiments. It has two independent components with dfferent goals: MEDUSA© Kernel and MEDUSA© Platform.
 
-### What is this repository for? ###
+This repository contains the narrative documentation of both components. Here you will find tutorials and guides that will help you to get started with MEDUSA.
 
-* Quick summary
-* Version
-* [Learn Markdown](https://bitbucket.org/tutorials/markdowndemo)
+## Information ##
+
+Check the following links to know more about the MEDUSA environment for neurotechnology and brain-computer interface (BCI) experiments:
+
+- Website: [https://www.medusabci.com/](https://www.medusabci.com/)
+- Documentation: [https://docs.medusabci.com/kernel/](https://docs.medusabci.com/kernel/)
+
+Important: MEDUSA Kernel is under heavy development! It may change significantly in following versions
 
 ### How do I get set up? ###
 
-* Summary of set up
-* Configuration
-* Dependencies
-* Database configuration
-* How to run tests
-* Deployment instructions
+* Download the respository
+* Create up your Python virtual environment
+* Install dependencies with pip install -r requirements.txt
+* Run the tutorials
 
 ### Contribution guidelines ###
 
-* Writing tests
-* Code review
-* Other guidelines
+The creation of new tutorials or the improvement of the existing ones will be very appreciated.
 
-### Who do I talk to? ###
-
-* Repo owner or admin
-* Other community or team contact
+Follow the instructions of this [guide](https://docs.medusabci.com/kernel/) to conrtibute in this repository!
