@@ -7,8 +7,8 @@ Requirements: pylsl, numpy
 
 """
 
-import pylsl
 import time, threading
+import pylsl
 import numpy as np
 
 #%% PARAMETERS
@@ -76,7 +76,8 @@ def send_data():
                 timestamp = pylsl.local_clock()
                 # Send the chunk through LSL
                 lsl_outlet.push_chunk(sample, timestamp)
-                # Wait for the next chunk
+                # Wait for the next chunk. This timer is not particularly
+                # accurate
                 time.sleep(chunk_size / sample_rate)
         except Exception as e:
             raise e
